@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.services.storage import search_logs
-from app.services.detection import run_detection
+from app.services.detection.base import run_detection
 
 router = APIRouter()
 
