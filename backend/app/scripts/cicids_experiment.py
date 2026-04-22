@@ -1,22 +1,41 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.utils.class_weight import compute_class_weight
+
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 
 
 # =========================
 # CONFIG
 # =========================
-FILE_PATH = "../../data/tuesday.csv"
-CONTAMINATION = 0.02
-THRESHOLD_PERCENTILE = 15
+USE_TIME_SPLIT = True
+
+TRAIN_PATHS = [
+    "../../data/tuesday.csv",
+    "../../data/wednesday.csv",
+    "../../data/thursday.csv"
+]
+
+TEST_PATHS = [
+    "../../data/friday.csv"
+]
+
+ALL_PATHS = TRAIN_PATHS + TEST_PATHS
 
 
+# =========================
+# LOAD MULTIPLE FILES
+# =========================
 def load_multiple_days(paths):
     dfs = []
-
     for path in paths:
         print(f"[INFO] Loading {path}")
         df = pd.read_csv(path, low_memory=False)
@@ -24,55 +43,31 @@ def load_multiple_days(paths):
 
     combined = pd.concat(dfs, ignore_index=True)
     print("[INFO] Combined shape:", combined.shape)
-
     return combined
 
-# =========================
-# LOAD DATA
-# =========================
-def load_data(path):
-    print("[INFO] Loading dataset...")
-    paths = [
-    "../../data/tuesday.csv",
-    "../../data/wednesday.csv",
-    "../../data/thursday.csv"
-]
-
-    df = load_multiple_days(paths)
-    print(f"[INFO] Shape: {df.shape}")
-    return df
-
 
 # =========================
-# SELECT FEATURES
+# FEATURE SELECTION
 # =========================
 def select_features(df):
-    print("[INFO] Selecting features...")
-
     selected_features = [
         "Flow Duration",
         "Total Fwd Packet",
         "Total Bwd packets",
         "Total Length of Fwd Packet",
         "Total Length of Bwd Packet",
-
         "Flow Bytes/s",
         "Flow Packets/s",
-
         "Fwd Packets/s",
         "Bwd Packets/s",
-
         "Packet Length Mean",
         "Packet Length Std",
         "Packet Length Max",
         "Packet Length Min",
-
         "Flow IAT Mean",
         "Flow IAT Std",
-
         "Active Mean",
         "Idle Mean",
-
         "SYN Flag Count",
         "RST Flag Count",
         "ACK Flag Count"
@@ -80,8 +75,13 @@ def select_features(df):
 
     df = df[selected_features + ["Label"]]
 
+    # Derived features
     df["packet_size_variation"] = df["Packet Length Std"] / (df["Packet Length Mean"] + 1)
     df["activity_ratio"] = df["Active Mean"] / (df["Idle Mean"] + 1)
+    df["bytes_per_packet"] = df["Flow Bytes/s"] / (df["Flow Packets/s"] + 1)
+    df["packet_rate_ratio"] = df["Fwd Packets/s"] / (df["Bwd Packets/s"] + 1)
+    df["flow_intensity"] = df["Flow Bytes/s"] * df["Flow Packets/s"]
+    df["forward_backward_ratio"] = df["Total Fwd Packet"] / (df["Total Bwd packets"] + 1)
 
     df = df[df["Flow Duration"] > 0]
 
@@ -92,23 +92,8 @@ def select_features(df):
 # CLEAN DATA
 # =========================
 def clean_data(df):
-    print("[INFO] Cleaning data...")
-
     df = df.replace([np.inf, -np.inf], 0)
     df = df.fillna(0)
-
-    return df
-
-
-# =========================
-# FEATURE ENGINEERING
-# =========================
-def add_derived_features(df):
-    print("[INFO] Adding derived features...")
-
-    df["bytes_per_packet"] = df["Flow Bytes/s"] / (df["Flow Packets/s"] + 1)
-    df["fwd_bwd_ratio"] = df["Total Fwd Packet"] / (df["Total Bwd packets"] + 1)
-
     return df
 
 
@@ -116,215 +101,194 @@ def add_derived_features(df):
 # PREPARE DATA
 # =========================
 def prepare_data(df):
-    print("[INFO] Preparing X and y...")
-
     X = df.drop(columns=["Label"])
-    y_true = df["Label"].apply(lambda x: 0 if x == "BENIGN" else 1)
-
-    return X, y_true
-
-
-# =========================
-# SCALE FEATURES (used for IsolationForest)
-# =========================
-def scale_features(X):
-    print("[INFO] Scaling features...")
-
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    return X_scaled
+    y = df["Label"].apply(lambda x: 0 if x == "BENIGN" else 1)
+    return X, y
 
 
 # =========================
-# TRAIN MODEL (Isolation Forest)
+# COMPUTE CLASS WEIGHTS
 # =========================
-def train_model(X):
-    print("[INFO] Training Isolation Forest...")
+def get_class_weights(y):
+    classes = np.unique(y)
 
-    model = IsolationForest(contamination=CONTAMINATION, random_state=42)
-    model.fit(X)
-
-    return model
-
-
-# =========================
-# PREDICT USING THRESHOLD (Isolation Forest)
-# =========================
-def predict_with_threshold(model, X):
-    print("[INFO] Predicting anomalies...")
-
-    scores = model.decision_function(X)
-
-    threshold = np.percentile(scores, THRESHOLD_PERCENTILE)
-    print(f"[INFO] Threshold: {threshold}")
-
-    y_pred = (scores < threshold).astype(int)
-
-    return y_pred, scores
-
-
-# =========================
-# EVALUATE
-# =========================
-def evaluate(y_true, y_pred):
-    print("\n[RESULT] Classification Report:\n")
-    print(classification_report(y_true, y_pred))
-
-
-# =========================
-# RANDOM FOREST (SUPERVISED)
-# =========================
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-
-
-def run_supervised_model(X, y):
-    print("[INFO] Running supervised model...")
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42, stratify=y
+    weights = compute_class_weight(
+        class_weight="balanced",
+        classes=classes,
+        y=y
     )
 
+    class_weight_dict = dict(zip(classes, weights))
+    print("[INFO] Class Weights:", class_weight_dict)
+
+    return class_weight_dict
+
+
+# =========================
+# MODELS
+# =========================
+
+def run_logistic_regression(X_train, X_test, y_train, y_test, class_weight):
     scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    model = LogisticRegression(
+        max_iter=1000,
+        n_jobs=-1,
+        class_weight=class_weight
+    )
+
+    model.fit(X_train_scaled, y_train)
+    y_pred = model.predict(X_test_scaled)
+
+    return y_pred
+
+
+def run_random_forest(X_train, X_test, y_train, y_test, class_weight):
     model = RandomForestClassifier(
         n_estimators=100,
         random_state=42,
         n_jobs=-1,
-        class_weight="balanced"
-
+        class_weight=class_weight
     )
 
     model.fit(X_train, y_train)
-
     y_pred = model.predict(X_test)
 
-    print("\n[RESULT] Random Forest:\n")
-    print(classification_report(y_test, y_pred))
+    return y_pred
 
-    return model, X_test, y_test
 
+def run_gradient_boosting(X_train, X_test, y_train, y_test, class_weight):
+    model = GradientBoostingClassifier()
+
+    sample_weights = y_train.map(class_weight)
+
+    model.fit(X_train, y_train, sample_weight=sample_weights)
+    y_pred = model.predict(X_test)
+
+    return y_pred
+
+
+def run_xgboost(X_train, X_test, y_train, y_test, class_weight):
+    # scale_pos_weight = imbalance ratio
+    neg, pos = np.bincount(y_train)
+    scale_pos_weight = neg / pos
+
+    model = XGBClassifier(
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        eval_metric="logloss",
+        scale_pos_weight=scale_pos_weight,
+        n_jobs=-1,
+        random_state=42
+    )
+
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    return y_pred
+
+
+def run_lightgbm(X_train, X_test, y_train, y_test, class_weight):
+    model = LGBMClassifier(
+        n_estimators=200,
+        learning_rate=0.1,
+        class_weight=class_weight,
+        n_jobs=-1,
+        random_state=42
+    )
+
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    return y_pred
 
 
 # =========================
-# MAIN
+# EVALUATION
 # =========================
+def evaluate_model(name, y_true, y_pred):
+    print(f"\n[RESULT] {name}:\n")
+    print(classification_report(y_true, y_pred, digits=4))
+    print("Confusion Matrix:")
+    print(confusion_matrix(y_true, y_pred))
 
 
+# =========================
+# MAIN PIPELINE
+# =========================
 def main():
-    # =========================
-    # CONFIG
-    # =========================
-    USE_TIME_SPLIT = True   # 🔥 set False for random split
 
-    TRAIN_PATHS = [
-        "../../data/tuesday.csv",
-        "../../data/wednesday.csv",
-        "../../data/thursday.csv"
-    ]
-
-    TEST_PATHS = [
-        "../../data/friday.csv"
-    ]
-
-    ALL_PATHS = TRAIN_PATHS + TEST_PATHS
-
-    # =========================
-    # LOAD DATA
-    # =========================
-    def load_multiple_days(paths):
-        dfs = []
-        for path in paths:
-            print(f"[INFO] Loading {path}")
-            df = pd.read_csv(path, low_memory=False)
-            dfs.append(df)
-        combined = pd.concat(dfs, ignore_index=True)
-        print("[INFO] Combined shape:", combined.shape)
-        return combined
-
-    # =========================
-    # PIPELINE FUNCTION
-    # =========================
-    def process(df):
-        print("\n[INFO] Label distribution:")
-        print(df["Label"].value_counts())
-
-        df = select_features(df)
-        df = clean_data(df)
-        df = add_derived_features(df)
-
-        X, y = prepare_data(df)
-
-        return X, y
-
-    # =========================
-    # SPLIT STRATEGY
-    # =========================
     if USE_TIME_SPLIT:
         print("\n[INFO] Using TIME-BASED split")
 
         df_train = load_multiple_days(TRAIN_PATHS)
         df_test = load_multiple_days(TEST_PATHS)
 
-        X_train, y_train = process(df_train)
-        X_test, y_test = process(df_test)
+        df_train = clean_data(select_features(df_train))
+        df_test = clean_data(select_features(df_test))
+
+        X_train, y_train = prepare_data(df_train)
+        X_test, y_test = prepare_data(df_test)
 
     else:
         print("\n[INFO] Using RANDOM split")
 
         df_all = load_multiple_days(ALL_PATHS)
-        X, y = process(df_all)
+        df_all = clean_data(select_features(df_all))
 
-        from sklearn.model_selection import train_test_split
+        X, y = prepare_data(df_all)
 
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=42, stratify=y
+            X, y, test_size=0.3, stratify=y, random_state=42
         )
 
     # =========================
-    # MODEL TRAINING
+    # CLASS WEIGHTS
     # =========================
-    from sklearn.ensemble import RandomForestClassifier
+    class_weight = get_class_weights(y_train)
 
-    print("\n[INFO] Training Random Forest...")
-
-    model = RandomForestClassifier(
-        n_estimators=100,
-        random_state=42,
-        n_jobs=-1,
-        class_weight="balanced"
+    # =========================
+    # RUN MODELS
+    # =========================
+    evaluate_model(
+        "Logistic Regression",
+        y_test,
+        run_logistic_regression(X_train, X_test, y_train, y_test, class_weight)
     )
 
-    model.fit(X_train, y_train)
+    evaluate_model(
+        "Random Forest",
+        y_test,
+        run_random_forest(X_train, X_test, y_train, y_test, class_weight)
+    )
 
-    # =========================
-    # EVALUATION
-    # =========================
-    print("\n[INFO] Evaluating on TEST set...")
+    evaluate_model(
+        "Gradient Boosting",
+        y_test,
+        run_gradient_boosting(X_train, X_test, y_train, y_test, class_weight)
+    )
 
-    y_pred = model.predict(X_test)
+    evaluate_model(
+        "XGBoost",
+        y_test,
+        run_xgboost(X_train, X_test, y_train, y_test, class_weight)
+    )
 
-    from sklearn.metrics import classification_report
-
-    print("\n[RESULT] Random Forest:\n")
-    print(classification_report(y_test, y_pred))
-
-    # =========================
-    # OPTIONAL: TRAIN PERFORMANCE (for comparison)
-    # =========================
-    print("\n[INFO] Training performance (sanity check):")
-    y_train_pred = model.predict(X_train)
-    print(classification_report(y_train, y_train_pred))
-
-
-
+    evaluate_model(
+        "LightGBM",
+        y_test,
+        run_lightgbm(X_train, X_test, y_train, y_test, class_weight)
+    )
 
 
 if __name__ == "__main__":
     main()
-
 
 
 # [INFO] Using TIME-BASED split
