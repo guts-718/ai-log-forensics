@@ -22,3 +22,4 @@ venv/
 *.ckpt
 *.tar.gz
 *.zip
+.env

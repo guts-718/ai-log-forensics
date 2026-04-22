@@ -1,0 +1,30 @@
+FEATURE_COLUMNS = [
+    "Flow Duration",
+    "Total Fwd Packet",
+    "Total Bwd packets",
+    "Total Length of Fwd Packet",
+    "Total Length of Bwd Packet",
+    "Flow Bytes/s",
+    "Flow Packets/s",
+    "Fwd Packets/s",
+    "Bwd Packets/s",
+    "Packet Length Mean",
+    "Packet Length Std",
+    "Packet Length Max",
+    "Packet Length Min",
+    "Flow IAT Mean",
+    "Flow IAT Std",
+    "Active Mean",
+    "Idle Mean",
+    "SYN Flag Count",
+    "RST Flag Count",
+    "ACK Flag Count",
+
+    # derived
+    "packet_size_variation",
+    "activity_ratio",
+    "bytes_per_packet",
+    "packet_rate_ratio",
+    "flow_intensity",
+    "forward_backward_ratio"
+]

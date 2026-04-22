@@ -12,6 +12,12 @@ from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 
+import joblib
+import os
+
+os.makedirs("app/models", exist_ok=True)
+
+
 
 # =========================
 # CONFIG
@@ -142,6 +148,8 @@ def run_logistic_regression(X_train, X_test, y_train, y_test, class_weight):
 
     model.fit(X_train_scaled, y_train)
     y_pred = model.predict(X_test_scaled)
+    joblib.dump(model, "app/models/logistic_regression.pkl")
+    joblib.dump(scaler, "app/models/scaler.pkl")
 
     return y_pred
 
@@ -156,6 +164,7 @@ def run_random_forest(X_train, X_test, y_train, y_test, class_weight):
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
+    joblib.dump(model, "app/models/random_forest.pkl")
 
     return y_pred
 
@@ -167,6 +176,7 @@ def run_gradient_boosting(X_train, X_test, y_train, y_test, class_weight):
 
     model.fit(X_train, y_train, sample_weight=sample_weights)
     y_pred = model.predict(X_test)
+    joblib.dump(model, "app/models/gradient_boosting.pkl")
 
     return y_pred
 
@@ -190,6 +200,7 @@ def run_xgboost(X_train, X_test, y_train, y_test, class_weight):
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
+    joblib.dump(model, "app/models/xgboost.pkl")
 
     return y_pred
 
@@ -205,6 +216,7 @@ def run_lightgbm(X_train, X_test, y_train, y_test, class_weight):
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
+    joblib.dump(model, "app/models/lightgbm.pkl")
 
     return y_pred
 

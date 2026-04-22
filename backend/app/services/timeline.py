@@ -52,3 +52,11 @@ def build_user_timelines(logs):
         timelines[user] = build_timeline(user_logs)
 
     return timelines
+
+def build_timeline_summary(events):
+    summary = []
+
+    for e in events:
+        summary.append(f"{e['time']} → {e['event']}")
+
+    return summary
