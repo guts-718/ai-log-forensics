@@ -286,9 +286,126 @@ def main():
         run_lightgbm(X_train, X_test, y_train, y_test, class_weight)
     )
 
+    print("\n=== MODEL SUMMARY ===")
+    print("Logistic Regression  → baseline")
+    print("Random Forest        → strong non-linear model")
+    print("Gradient Boosting    → best overall")
+    print("XGBoost / LightGBM   → comparable performance")
+
 
 if __name__ == "__main__":
     main()
+
+
+# [RESULT] Logistic Regression:
+
+#               precision    recall  f1-score   support
+
+#            0     0.9961    0.9542    0.9747    288544
+#            1     0.9512    0.9959    0.9730    259013
+
+#     accuracy                         0.9739    547557
+#    macro avg     0.9737    0.9750    0.9739    547557
+# weighted avg     0.9749    0.9739    0.9739    547557
+
+# Confusion Matrix:
+# [[275321  13223]
+#  [  1066 257947]]
+
+# [RESULT] Random Forest:
+
+#               precision    recall  f1-score   support
+
+#            0     0.9846    0.9978    0.9912    288544
+#            1     0.9975    0.9826    0.9900    259013
+
+#     accuracy                         0.9906    547557
+#    macro avg     0.9911    0.9902    0.9906    547557
+# weighted avg     0.9907    0.9906    0.9906    547557
+
+# Confusion Matrix:
+# [[287905    639]
+#  [  4498 254515]]
+
+# [RESULT] Gradient Boosting:
+
+#               precision    recall  f1-score   support
+
+#            0     0.9964    0.9950    0.9957    288544
+#            1     0.9945    0.9960    0.9952    259013
+
+#     accuracy                         0.9955    547557
+#    macro avg     0.9954    0.9955    0.9954    547557
+# weighted avg     0.9955    0.9955    0.9955    547557
+
+# Confusion Matrix:
+# [[287106   1438]
+#  [  1049 257964]]
+
+# [RESULT] XGBoost:
+
+#               precision    recall  f1-score   support
+
+#            0     0.9904    0.9975    0.9939    288544
+#            1     0.9972    0.9892    0.9932    259013
+
+#     accuracy                         0.9936    547557
+#    macro avg     0.9938    0.9934    0.9936    547557
+# weighted avg     0.9936    0.9936    0.9936    547557
+
+# Confusion Matrix:
+# [[287830    714]
+#  [  2798 256215]]
+# [LightGBM] [Warning] Found whitespace in feature_names, replace with underlines
+# [LightGBM] [Info] Number of positive: 258397, number of negative: 922396
+# [LightGBM] [Info] Auto-choosing col-wise multi-threading, the overhead of testing was 0.159056 seconds.
+# You can set `force_col_wise=true` to remove the overhead.
+# [LightGBM] [Info] Total Bins 6012
+# [LightGBM] [Info] Number of data points in the train set: 1180793, number of used features: 26
+# [LightGBM] [Info] [binary:BoostFromScore]: pavg=0.500000 -> initscore=0.000000
+# [LightGBM] [Info] Start training from score 0.000000
+
+# [RESULT] LightGBM:
+
+#               precision    recall  f1-score   support
+
+#            0     0.9880    0.9969    0.9924    288544
+#            1     0.9965    0.9865    0.9915    259013
+
+#     accuracy                         0.9920    547557
+#    macro avg     0.9923    0.9917    0.9920    547557
+# weighted avg     0.9920    0.9920    0.9920    547557
+
+# Confusion Matrix:
+# [[287647    897]
+#  [  3489 255524]]
+
+# === MODEL SUMMARY ===
+# Logistic Regression  → baseline
+# Random Forest        → strong non-linear model
+# Gradient Boosting    → best overall
+# XGBoost / LightGBM   → comparable performance
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # [INFO] Using TIME-BASED split
