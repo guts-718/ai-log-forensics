@@ -43,18 +43,25 @@ def detect():
         user_logs = [l for l in logs if l.get("user") == user]
 
         # Decide if ML should be used
-        is_network_data = any("flow_duration" in l for l in user_logs)
-        features = {}
+        features = None
+        confidence = None
+
+        is_network_data = any(l.get("source") == "network" for l in user_logs)
+
         if is_network_data:
-            # ✅ Use ML confidence
             features = extract_network_features(user_logs)
-            ml_results = predict_with_confidence([features])
-            confidence = ml_results[0]["confidence"]
+
+            if features is not None:
+                ml_results = predict_with_confidence([features])
+                confidence = ml_results[0]["confidence"]
+            else:
+                # network logs exist but no usable features
+                confidence = get_rule_confidence(alert["type"])
         else:
-            # ✅ Use rule-based confidence
+            # pure system logs
             confidence = get_rule_confidence(alert["type"])
 
-        attack_type = classify_event(user_logs, features)
+        attack_type = classify_event(user_logs, features or {})
         reasons = generate_reasoning(features,user_logs)
         timeline = build_timeline_summary(timelines.get(user, []))
 

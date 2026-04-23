@@ -1,19 +1,46 @@
+def detect_source(parsed):
+
+    if "Flow Duration" in parsed:
+        return "network"
+
+    if parsed.get("event"):
+        return "system"
+
+    return "unknown"
+
+
 def normalize_log(parsed):
     event_type = normalize_event(parsed.get("event") or parsed.get("event_type"))
-
-    return {
+    source = detect_source(parsed)
+    base = {
         "timestamp": parsed.get("time") or parsed.get("timestamp"),
         "event_type": event_type,
         "user": parsed.get("user", "unknown"),
-        "source_ip": parsed.get("ip") or parsed.get("source_ip"),
-        "file_name": parsed.get("file") or parsed.get("file_name"),
-        "status": normalize_status(parsed.get("status")),
-
-        # 👇 optional structured field
+        "source": source,
+        "metadata": {},
         "alert": {
             "type": event_type,
         }
-    }
+       }
+     # ===== SYSTEM LOG =====
+    if source == "system":
+        base["metadata"] = {
+            "file_name": parsed.get("file"),
+            "status": parsed.get("status"),
+            "ip": parsed.get("ip")
+        }
+
+    # ===== NETWORK LOG =====
+    elif source == "network":
+        base["metadata"] = {
+            "flow_duration": parsed.get("Flow Duration"),
+            "bytes": parsed.get("Flow Bytes/s"),
+            "packets": parsed.get("Flow Packets/s"),
+            "src_ip": parsed.get("Src IP"),
+            "dst_ip": parsed.get("Dst IP"),
+        }
+
+    return base
 
 
 def normalize_event(event):

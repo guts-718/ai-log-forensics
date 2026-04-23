@@ -1,3 +1,9 @@
+# | Source       | Use              |
+# | ------------ | ---------------- |
+# | system logs  | rule-based + LLM |
+# | network logs | ML + features    |
+
+
 from collections import defaultdict
 
 import numpy as np
