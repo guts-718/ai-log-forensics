@@ -19,13 +19,20 @@ from app.services.feature_engineering import extract_network_features
 from app.services.ml_model import predict_with_confidence
 
 router = APIRouter()
+def get_rule_confidence(alert_type):
+    return {
+        "burst_activity": 0.6,
+        "possible_exfiltration": 0.8
+    }.get(alert_type, 0.5)
+
 
 @router.get("/")
 def detect():
 
     logs = get_logs_from_es()
-
+    print("logs: ", logs)
     alerts = run_detection(logs)
+    print("alerts: ", alerts)
     timelines = build_user_timelines(logs)
 
     results = []
@@ -33,20 +40,22 @@ def detect():
     for alert in alerts:
         user = alert.get("user", "unknown")
 
-        confidence = alert.get("score", None)
-
-        if confidence is None:
-            confidence = "medium"  
-
         user_logs = [l for l in logs if l.get("user") == user]
 
-        features = extract_network_features(user_logs)
-        ml_results = predict_with_confidence([features])
-
-        confidence = ml_results[0]["confidence"]
+        # Decide if ML should be used
+        is_network_data = any("flow_duration" in l for l in user_logs)
+        features = {}
+        if is_network_data:
+            # ✅ Use ML confidence
+            features = extract_network_features(user_logs)
+            ml_results = predict_with_confidence([features])
+            confidence = ml_results[0]["confidence"]
+        else:
+            # ✅ Use rule-based confidence
+            confidence = get_rule_confidence(alert["type"])
 
         attack_type = classify_event(user_logs, features)
-        reasons = generate_reasoning(features)
+        reasons = generate_reasoning(features,user_logs)
         timeline = build_timeline_summary(timelines.get(user, []))
 
         event = {

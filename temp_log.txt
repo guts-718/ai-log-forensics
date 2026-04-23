@@ -1,13 +1,4 @@
-2024-01-01 10:00:00 user=rahul login success ip=1.2.3.4
-2024-01-01 10:05:00 user=rahul file accessed report.pdf
-2024-01-01 10:07:00 usb device connected
-
-2024-01-01 10:00:00 user=normal login success ip=1.1.1.1
-2024-01-01 10:10:00 user=normal file accessed a.txt
-
-2024-01-01 10:00:00 user=attacker login success ip=2.2.2.2
-2024-01-01 10:01:00 user=attacker file accessed a.txt
-2024-01-01 10:02:00 user=attacker file accessed b.txt
-2024-01-01 10:03:00 user=attacker file accessed c.txt
-2024-01-01 10:04:00 user=attacker file accessed d.txt
-2024-01-01 10:05:00 user=attacker file accessed e.txt
+[
+  {"time": "2024-01-01 12:00:00", "event": "login", "user": "normal"},
+  {"time": "2024-01-01 12:10:00", "event": "file_access", "user": "normal"}
+]

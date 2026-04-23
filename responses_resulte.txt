@@ -1,0 +1,23 @@
+[
+  {
+    "user": "rahul",
+    "attack_type": "Insider Threat",
+    "confidence": 0.8,
+    "alert": {
+      "type": "possible_exfiltration",
+      "details": "login → file → transfer",
+      "timestamp": "2024-01-01 10:04:00",
+      "user": "rahul"
+    },
+    "reasons": [
+      "USB device activity detected (possible external data transfer)",
+      "Sequence login → file access → USB suggests data exfiltration"
+    ],
+    "timeline": [
+      "2024-01-01 10:00:00 → User logged in from None",
+      "2024-01-01 10:02:00 → Accessed file None",
+      "2024-01-01 10:04:00 → USB device connected"
+    ],
+    "llm_explanation": "### 1. What Happened\nOn January 1, 2024, user Rahul logged into the system and accessed a file, followed by connecting a USB device. The sequence of actions indicates potential data exfiltration.\n\n### 2. Why It Is Suspicious\nThe login from an unspecified location, coupled with accessing a file and immediately connecting a USB device, raises red flags. This behavior is characteristic of insider threats, where an individual may attempt to transfer sensitive data outside the organization. The lack of specific details regarding the login and file accessed further heightens the suspicion.\n\n### 3. Possible Impact\nIf the data was indeed exfiltrated, it could lead to unauthorized disclosure of sensitive information, financial loss, reputational damage, and potential legal ramifications for the organization. Additionally, it may compromise the integrity of the organization's data security protocols. Immediate investigation and remediation are necessary to mitigate these risks."
+  }
+]

@@ -14,11 +14,9 @@ def generate_cache_key(event):
 
 
 
-
 def generate_llm_explanation(event):
     cache_key = generate_cache_key(event)
 
-    # ✅ check cache first
     if cache_key in LLM_CACHE:
         return LLM_CACHE[cache_key]
 
@@ -26,7 +24,8 @@ def generate_llm_explanation(event):
 You are a cybersecurity analyst.
 
 User: {event['user']}
-Attack: {event['attack_type']}
+Detected Attack: {event['attack_type']}
+Alert Type: {event.get('alert_type', 'unknown')}
 
 Timeline:
 {chr(10).join(event['timeline'])}
@@ -34,8 +33,12 @@ Timeline:
 Reasons:
 {", ".join(event['reasons'])}
 
-Explain what happened, why suspicious, and impact.
-Keep it concise.
+Explain:
+1. What happened
+2. Why it is suspicious
+3. Possible impact
+
+Keep it concise and professional.
 """
 
     try:
@@ -46,8 +49,6 @@ Keep it concise.
         )
 
         explanation = response.choices[0].message.content
-
-        # ✅ store in cache
         LLM_CACHE[cache_key] = explanation
 
         return explanation

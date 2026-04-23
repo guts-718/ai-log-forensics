@@ -1,0 +1,82 @@
+[
+  {
+    "user": "unknown",
+    "attack_type": "Unknown",
+    "confidence": 0.742,
+    "alert": {
+      "type": "burst_activity",
+      "details": "6 events in 2 minutes",
+      "timestamp": "2024-01-01 10:00:00"
+    },
+    "reasons": [],
+    "timeline": [
+      "2024-01-01 10:07:00 → USB device connected",
+      "2024-01-01 10:07:00 → USB device connected"
+    ],
+    "llm_explanation": "**Incident Summary:**\n\nOn January 1, 2024, at 10:07:00, a USB device was connected to the system, with two entries logged for the same event.\n\n**Suspicious Activity:**\n\n1. **Multiple Connections:** The simultaneous logging of two USB device connections raises suspicion. It could indicate either a malfunction or an attempt to connect multiple devices, which is atypical behavior for a standard user.\n  \n2. **Unknown User:** The identity of the user is unknown, suggesting that the connection may not be authorized or legitimate. This could point to potential insider threats or external attacks.\n\n**Impact:**\n\n- **Data Breach Risk:** If the USB device is malicious, it could lead to data exfiltration, malware installation, or system compromise.\n- **System Integrity:** Unauthorized devices can undermine the integrity of the system, potentially allowing attackers to gain persistent access or control.\n- **Compliance Violations:** Depending on the organization's policies and regulatory requirements, this incident could lead to compliance issues if sensitive data is exposed.\n\n**Recommendation:** Immediate investigation of the USB device, user activity, and system logs is essential to assess the risk and mitigate potential threats."
+  },
+  {
+    "user": "unknown",
+    "attack_type": "Unknown",
+    "confidence": 0.742,
+    "alert": {
+      "type": "burst_activity",
+      "details": "5 events in 2 minutes",
+      "timestamp": "2024-01-01 10:00:00"
+    },
+    "reasons": [],
+    "timeline": [
+      "2024-01-01 10:07:00 → USB device connected",
+      "2024-01-01 10:07:00 → USB device connected"
+    ],
+    "llm_explanation": "**Incident Summary:**\n\nOn January 1, 2024, at 10:07:00, a USB device was connected to the system, with two entries logged for the same event.\n\n**Suspicious Activity:**\n\n1. **Multiple Connections:** The simultaneous logging of two USB device connections raises suspicion. It could indicate either a malfunction or an attempt to connect multiple devices, which is atypical behavior for a standard user.\n  \n2. **Unknown User:** The identity of the user is unknown, suggesting that the connection may not be authorized or legitimate. This could point to potential insider threats or external attacks.\n\n**Impact:**\n\n- **Data Breach Risk:** If the USB device is malicious, it could lead to data exfiltration, malware installation, or system compromise.\n- **System Integrity:** Unauthorized devices can undermine the integrity of the system, potentially allowing attackers to gain persistent access or control.\n- **Compliance Violations:** Depending on the organization's policies and regulatory requirements, this incident could lead to compliance issues if sensitive data is exposed.\n\n**Recommendation:** Immediate investigation of the USB device, user activity, and system logs is essential to assess the risk and mitigate potential threats."
+  },
+  {
+    "user": "unknown",
+    "attack_type": "Unknown",
+    "confidence": 0.742,
+    "alert": {
+      "type": "burst_activity",
+      "details": "5 events in 2 minutes",
+      "timestamp": "2024-01-01 10:03:00"
+    },
+    "reasons": [],
+    "timeline": [
+      "2024-01-01 10:07:00 → USB device connected",
+      "2024-01-01 10:07:00 → USB device connected"
+    ],
+    "llm_explanation": "**Incident Summary:**\n\nOn January 1, 2024, at 10:07:00, a USB device was connected to the system, with two entries logged for the same event.\n\n**Suspicious Activity:**\n\n1. **Multiple Connections:** The simultaneous logging of two USB device connections raises suspicion. It could indicate either a malfunction or an attempt to connect multiple devices, which is atypical behavior for a standard user.\n  \n2. **Unknown User:** The identity of the user is unknown, suggesting that the connection may not be authorized or legitimate. This could point to potential insider threats or external attacks.\n\n**Impact:**\n\n- **Data Breach Risk:** If the USB device is malicious, it could lead to data exfiltration, malware installation, or system compromise.\n- **System Integrity:** Unauthorized devices can undermine the integrity of the system, potentially allowing attackers to gain persistent access or control.\n- **Compliance Violations:** Depending on the organization's policies and regulatory requirements, this incident could lead to compliance issues if sensitive data is exposed.\n\n**Recommendation:** Immediate investigation of the USB device, user activity, and system logs is essential to assess the risk and mitigate potential threats."
+  },
+  {
+    "user": "unknown",
+    "attack_type": "Unknown",
+    "confidence": 0.742,
+    "alert": {
+      "type": "burst_activity",
+      "details": "5 events in 2 minutes",
+      "timestamp": "2024-01-01 10:05:00"
+    },
+    "reasons": [],
+    "timeline": [
+      "2024-01-01 10:07:00 → USB device connected",
+      "2024-01-01 10:07:00 → USB device connected"
+    ],
+    "llm_explanation": "**Incident Summary:**\n\nOn January 1, 2024, at 10:07:00, a USB device was connected to the system, with two entries logged for the same event.\n\n**Suspicious Activity:**\n\n1. **Multiple Connections:** The simultaneous logging of two USB device connections raises suspicion. It could indicate either a malfunction or an attempt to connect multiple devices, which is atypical behavior for a standard user.\n  \n2. **Unknown User:** The identity of the user is unknown, suggesting that the connection may not be authorized or legitimate. This could point to potential insider threats or external attacks.\n\n**Impact:**\n\n- **Data Breach Risk:** If the USB device is malicious, it could lead to data exfiltration, malware installation, or system compromise.\n- **System Integrity:** Unauthorized devices can undermine the integrity of the system, potentially allowing attackers to gain persistent access or control.\n- **Compliance Violations:** Depending on the organization's policies and regulatory requirements, this incident could lead to compliance issues if sensitive data is exposed.\n\n**Recommendation:** Immediate investigation of the USB device, user activity, and system logs is essential to assess the risk and mitigate potential threats."
+  },
+  {
+    "user": "unknown",
+    "attack_type": "Unknown",
+    "confidence": 0.742,
+    "alert": {
+      "type": "possible_exfiltration",
+      "details": "login → file → transfer",
+      "timestamp": "2024-01-01 10:07:00"
+    },
+    "reasons": [],
+    "timeline": [
+      "2024-01-01 10:07:00 → USB device connected",
+      "2024-01-01 10:07:00 → USB device connected"
+    ],
+    "llm_explanation": "**Incident Summary:**\n\nOn January 1, 2024, at 10:07:00, a USB device was connected to the system, with two entries logged for the same event.\n\n**Suspicious Activity:**\n\n1. **Multiple Connections:** The simultaneous logging of two USB device connections raises suspicion. It could indicate either a malfunction or an attempt to connect multiple devices, which is atypical behavior for a standard user.\n  \n2. **Unknown User:** The identity of the user is unknown, suggesting that the connection may not be authorized or legitimate. This could point to potential insider threats or external attacks.\n\n**Impact:**\n\n- **Data Breach Risk:** If the USB device is malicious, it could lead to data exfiltration, malware installation, or system compromise.\n- **System Integrity:** Unauthorized devices can undermine the integrity of the system, potentially allowing attackers to gain persistent access or control.\n- **Compliance Violations:** Depending on the organization's policies and regulatory requirements, this incident could lead to compliance issues if sensitive data is exposed.\n\n**Recommendation:** Immediate investigation of the USB device, user activity, and system logs is essential to assess the risk and mitigate potential threats."
+  }
+]

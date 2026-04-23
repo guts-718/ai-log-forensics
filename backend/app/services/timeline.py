@@ -54,9 +54,13 @@ def build_user_timelines(logs):
     return timelines
 
 def build_timeline_summary(events):
+    seen = set()
     summary = []
 
     for e in events:
-        summary.append(f"{e['time']} → {e['event']}")
+        key = (e["time"], e["event"])
+        if key not in seen:
+            seen.add(key)
+            summary.append(f"{e['time']} → {e['event']}")
 
     return summary
