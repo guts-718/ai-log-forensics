@@ -1,26 +1,33 @@
-from pyexpat import features
-
 from fastapi import APIRouter
-from app.services.storage import search_logs
+
+from app.services.storage_utils import get_logs_from_es
 from app.services.detection.base import run_detection
+
+from app.services.timeline import build_user_timelines, build_timeline_summary
+
+from app.services.feature_engineering import extract_network_features
+from app.services.ml_model import predict_with_confidence
 
 from app.services.explanation.classifier import classify_event
 from app.services.explanation.explainer import generate_reasoning
-from app.services.timeline import build_timeline
-from app.services.feature_engineering import extract_features
-from app.services.timeline import build_user_timelines, build_timeline_summary
-from app.services.storage_utils import get_logs_from_es
 from app.services.explanation.llm_explainer import generate_llm_explanation
-from app.services.ml_model import predict_with_confidence
-from app.services.feature_engineering import extract_network_features
 
-
-from app.services.feature_engineering import extract_network_features
-from app.services.ml_model import predict_with_confidence
 from app.services.correlation_engine import correlate_events
-from app.services.scoring_engine import compute_risk_score, get_risk_level
+
+from app.services.baseline import build_user_baselines, detect_user_anomaly
+
+from app.services.scoring_engine import (
+    compute_risk_score,
+    normalize_score,
+    get_risk_level
+)
 
 router = APIRouter()
+
+
+# =========================
+# Rule-based fallback confidence
+# =========================
 def get_rule_confidence(alert_type):
     return {
         "burst_activity": 0.6,
@@ -28,6 +35,9 @@ def get_rule_confidence(alert_type):
     }.get(alert_type, 0.5)
 
 
+# =========================
+# Simple anomaly detector
+# =========================
 def detect_anomaly(features):
     if not features:
         return False
@@ -41,44 +51,56 @@ def detect_anomaly(features):
     return False
 
 
+# =========================
+# MAIN DETECT ENDPOINT
+# =========================
 @router.get("/")
 def detect():
 
     logs = get_logs_from_es()
-    print("logs: ", logs)
     user_groups = build_user_timelines(logs)
+
+    baselines = build_user_baselines(logs)
 
     alerts = []
 
+    # =========================
+    # 1. Generate alerts (rule + correlation)
+    # =========================
     for user, user_logs in user_groups.items():
 
         base_alerts = run_detection(user_logs)
 
-        # attach user
         for a in base_alerts:
             a["user"] = user
 
-        # 🔥 NEW: correlation
-        correlated = correlate_events(user_logs, base_alerts)
+        correlated_alerts = correlate_events(user_logs, base_alerts)
 
-        for c in correlated:
+        for c in correlated_alerts:
             c["user"] = user
 
         alerts.extend(base_alerts)
-        alerts.extend(correlated)
+        alerts.extend(correlated_alerts)
 
-
-    print("alerts: ", alerts)
     timelines = build_user_timelines(logs)
 
     results = []
-    cnt=0
+    llm_limit = 5
+    llm_count = 0
+
+    # =========================
+    # 2. Process alerts
+    # =========================
     for alert in alerts:
+
         user = alert.get("user", "unknown")
+        user_logs = timelines.get(user, [])
 
-        user_logs = [l for l in logs if l.get("user") == user]
+        # ===== BASELINE =====
+        baseline = baselines.get(user, {})
+        baseline_anomalies = detect_user_anomaly(user_logs, baseline)
 
-        # Decide if ML should be used
+        # ===== FEATURE EXTRACTION =====
         features = None
         confidence = None
 
@@ -87,43 +109,60 @@ def detect():
         if is_network_data:
             features = extract_network_features(user_logs)
 
-            if features is not None:
+            if features:
                 ml_results = predict_with_confidence([features])
                 confidence = ml_results[0]["confidence"]
             else:
-                # network logs exist but no usable features
                 confidence = get_rule_confidence(alert["type"])
         else:
-            # pure system logs
             confidence = get_rule_confidence(alert["type"])
 
+        # ===== SCORING (HYBRID) =====
+        ml_conf = confidence if is_network_data else None
+
+        score, score_reasons = compute_risk_score(
+            user_logs,
+            features,
+            alert,
+            ml_confidence=ml_conf
+        )
+
+        score = normalize_score(score)
+        risk_level = get_risk_level(score)
+
+        # ===== CLASSIFICATION =====
         attack_type = classify_event(user_logs, features or {})
 
         if detect_anomaly(features):
             attack_type = "Anomalous Behavior"
 
-        score, score_reasons = compute_risk_score(user_logs, features, alert)
-        risk_level = get_risk_level(score)
-        reasons = generate_reasoning(features,user_logs)
-        reasons = list(set(reasons + score_reasons))
-        timeline = build_timeline_summary(timelines.get(user, []))
+        # ===== REASONING =====
+        reasons = generate_reasoning(features, user_logs)
 
+        # merge all reasoning sources
+        reasons = list(set(reasons + score_reasons + baseline_anomalies))
+
+        # ===== TIMELINE =====
+        timeline = build_timeline_summary(user_logs)
+
+        # ===== LLM EVENT =====
         event = {
             "user": user,
             "attack_type": attack_type,
             "timeline": timeline,
             "reasons": reasons,
             "alert_type": alert["type"],
-            "source_mix": list(set([l.get("source") for l in user_logs]))
+            "source_mix": list(set(l.get("source") for l in user_logs))
         }
-        cnt+=1
-        if cnt>5:
-            print("Limiting to 5 events for LLM explanation")
-            break
 
-        # if attack_type != "Unknown":
-        llm_explanation = generate_llm_explanation(event)
-    
+        # ===== LLM (limited calls) =====
+        if llm_count < llm_limit:
+            llm_explanation = generate_llm_explanation(event)
+            llm_count += 1
+        else:
+            llm_explanation = "Skipped (LLM call limit)"
+
+        # ===== FINAL OUTPUT =====
         results.append({
             "user": user,
             "attack_type": attack_type,
@@ -131,6 +170,7 @@ def detect():
             "risk_score": score,
             "risk_level": risk_level,
             "alert": alert,
+            "baseline_anomalies": baseline_anomalies,
             "reasons": reasons,
             "timeline": timeline,
             "llm_explanation": llm_explanation

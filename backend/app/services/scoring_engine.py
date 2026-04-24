@@ -1,14 +1,17 @@
-def compute_risk_score(logs, features, alert):
+def compute_risk_score(logs, features, alert, ml_confidence=None):
 
     score = 0
     reasons = []
 
     events = [l.get("event_type") for l in logs]
+    sources = [l.get("source") for l in logs]
 
-    # ===== SYSTEM SIGNALS =====
+    # =========================
+    # 1. RULE-BASED SIGNALS
+    # =========================
     if "usb" in events:
         score += 2
-        reasons.append("USB activity")
+        reasons.append("USB activity detected")
 
     if events.count("file_access") >= 2:
         score += 2
@@ -18,25 +21,50 @@ def compute_risk_score(logs, features, alert):
         score += 3
         reasons.append("Brute force pattern")
 
-    # ===== NETWORK SIGNALS =====
+    # =========================
+    # 2. ML SIGNAL (VERY IMPORTANT)
+    # =========================
+    if ml_confidence is not None:
+        ml_score = int(ml_confidence * 5)  # scale 0–5
+        score += ml_score
+        reasons.append(f"ML anomaly score: {ml_confidence:.2f}")
+
+    # =========================
+    # 3. NETWORK FEATURES
+    # =========================
     if features:
         if features.get("Flow Bytes/s", 0) > 10000:
-            score += 3
+            score += 2
             reasons.append("High network traffic")
 
         if features.get("packet_size_variation", 0) > 5:
-            score += 2
+            score += 1
             reasons.append("Unusual packet variation")
 
-    # ===== ALERT TYPE BOOST =====
+    # =========================
+    # 4. CORRELATION BOOST
+    # =========================
+    if alert["type"] == "cross_source_exfiltration":
+        score += 4
+        reasons.append("Cross-source correlation detected")
+
     if alert["type"] == "possible_exfiltration":
         score += 3
 
     if alert["type"] == "burst_activity":
         score += 1
 
+    # =========================
+    # 5. SOURCE MIX BONUS
+    # =========================
+    if len(set(sources)) > 1:
+        score += 2
+        reasons.append("Multiple data sources involved")
+
     return score, reasons
 
+def normalize_score(score):
+    return min(score, 10)
 
 def get_risk_level(score):
     if score >= 7:
@@ -45,3 +73,22 @@ def get_risk_level(score):
         return "medium"
     else:
         return "low"
+    
+
+def add_baseline_score(score, anomalies):
+
+    reasons = []
+
+    for a in anomalies:
+        if "First-time USB" in a:
+            score += 3
+        elif "new IP" in a:
+            score += 2
+        elif "spike" in a:
+            score += 2
+        else:
+            score += 1
+
+        reasons.append(a)
+
+    return score, reasons
