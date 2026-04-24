@@ -18,6 +18,7 @@ from app.services.feature_engineering import extract_network_features
 from app.services.feature_engineering import extract_network_features
 from app.services.ml_model import predict_with_confidence
 from app.services.correlation_engine import correlate_events
+from app.services.scoring_engine import compute_risk_score, get_risk_level
 
 router = APIRouter()
 def get_rule_confidence(alert_type):
@@ -25,6 +26,19 @@ def get_rule_confidence(alert_type):
         "burst_activity": 0.6,
         "possible_exfiltration": 0.8
     }.get(alert_type, 0.5)
+
+
+def detect_anomaly(features):
+    if not features:
+        return False
+
+    if features.get("event_count", 0) > 10:
+        return True
+
+    if features.get("Flow Bytes/s", 0) > 20000:
+        return True
+
+    return False
 
 
 @router.get("/")
@@ -84,7 +98,14 @@ def detect():
             confidence = get_rule_confidence(alert["type"])
 
         attack_type = classify_event(user_logs, features or {})
+
+        if detect_anomaly(features):
+            attack_type = "Anomalous Behavior"
+
+        score, score_reasons = compute_risk_score(user_logs, features, alert)
+        risk_level = get_risk_level(score)
         reasons = generate_reasoning(features,user_logs)
+        reasons = list(set(reasons + score_reasons))
         timeline = build_timeline_summary(timelines.get(user, []))
 
         event = {
@@ -107,6 +128,8 @@ def detect():
             "user": user,
             "attack_type": attack_type,
             "confidence": confidence,
+            "risk_score": score,
+            "risk_level": risk_level,
             "alert": alert,
             "reasons": reasons,
             "timeline": timeline,
