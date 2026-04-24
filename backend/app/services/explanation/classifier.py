@@ -2,6 +2,9 @@ def classify_event(logs, features):
     events = [l.get("event_type") for l in logs]
     events_str = " ".join(events)
 
+    if any(a.get("type") == "cross_source_exfiltration" for a in logs):
+        return "Advanced Data Exfiltration"
+    
     # ===== 1. Data Exfiltration =====
     if "usb" in events and events.count("file_access") >= 2:
         return "Data Exfiltration"

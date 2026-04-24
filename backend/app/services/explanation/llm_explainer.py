@@ -26,6 +26,7 @@ You are a cybersecurity analyst.
 User: {event['user']}
 Detected Attack: {event['attack_type']}
 Alert Type: {event.get('alert_type', 'unknown')}
+Sources involved: {event.get('source_mix')}
 
 Timeline:
 {chr(10).join(event['timeline'])}

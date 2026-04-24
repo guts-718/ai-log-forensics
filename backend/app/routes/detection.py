@@ -17,6 +17,7 @@ from app.services.feature_engineering import extract_network_features
 
 from app.services.feature_engineering import extract_network_features
 from app.services.ml_model import predict_with_confidence
+from app.services.correlation_engine import correlate_events
 
 router = APIRouter()
 def get_rule_confidence(alert_type):
@@ -31,7 +32,28 @@ def detect():
 
     logs = get_logs_from_es()
     print("logs: ", logs)
-    alerts = run_detection(logs)
+    user_groups = build_user_timelines(logs)
+
+    alerts = []
+
+    for user, user_logs in user_groups.items():
+
+        base_alerts = run_detection(user_logs)
+
+        # attach user
+        for a in base_alerts:
+            a["user"] = user
+
+        # 🔥 NEW: correlation
+        correlated = correlate_events(user_logs, base_alerts)
+
+        for c in correlated:
+            c["user"] = user
+
+        alerts.extend(base_alerts)
+        alerts.extend(correlated)
+
+
     print("alerts: ", alerts)
     timelines = build_user_timelines(logs)
 
@@ -69,7 +91,9 @@ def detect():
             "user": user,
             "attack_type": attack_type,
             "timeline": timeline,
-            "reasons": reasons
+            "reasons": reasons,
+            "alert_type": alert["type"],
+            "source_mix": list(set([l.get("source") for l in user_logs]))
         }
         cnt+=1
         if cnt>5:
