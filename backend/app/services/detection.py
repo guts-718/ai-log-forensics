@@ -64,31 +64,38 @@ def detect_suspicious_sequences(logs):
 
 from datetime import datetime, timedelta
 
+from datetime import datetime, timedelta
+
 def detect_burst_activity(logs):
     alerts = []
-
-    logs = sorted(logs, key=lambda x: x["timestamp"])
+    print("entered burst activity checker")
+    print("\n\nSample log:", logs[0])
+    print("\n\nKeys:", logs[0].keys())
+    logs = [l for l in logs if l.get("time")]
+    logs.sort(key=lambda x: x["time"])
 
     for i in range(len(logs)):
         count = 1
-        t1 = datetime.strptime(logs[i]["timestamp"], "%Y-%m-%d %H:%M:%S")
+        t1 = datetime.strptime(logs[i]["time"], "%Y-%m-%d %H:%M:%S")
 
         for j in range(i+1, len(logs)):
-            t2 = datetime.strptime(logs[j]["timestamp"], "%Y-%m-%d %H:%M:%S")
+            t2 = datetime.strptime(logs[j]["time"], "%Y-%m-%d %H:%M:%S")
 
             if (t2 - t1) <= timedelta(minutes=2):
                 count += 1
             else:
                 break
 
-        if count >= 5:
+        if count >= 3:
             alerts.append({
                 "type": "burst_activity",
-                "details": f"{count} events within 2 minutes",
-                "timestamp": logs[i]["timestamp"]
+                "details": f"{count} events in 2 minutes",
+                "timestamp": logs[i]["time"]
             })
 
     return alerts
+
+
 
 def detect_exfiltration_pattern(logs):
     alerts = []
