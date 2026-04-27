@@ -1,12 +1,14 @@
 from datetime import datetime
 
 def format_event(log):
-    if log["event_type"] == "login":
-        return f"User logged in from {log.get('ip')}"
-    if log["event_type"] == "file_access":
-        return f"Accessed file {log.get('file')}"
-    if log["event_type"] == "usb":
-        return "USB device connected"
+    # if log["event_type"] == "login":
+    #     return "login"
+    #     return f"User logged in from {log.get('ip')}"
+    # if log["event_type"] == "file_access":
+
+    #     return f"Accessed file {log.get('file')}"
+    # if log["event_type"] == "usb":
+    #     return "USB device connected"
 
     return log["event_type"]
 

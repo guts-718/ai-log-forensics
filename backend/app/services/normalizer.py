@@ -43,19 +43,26 @@ def normalize_log(parsed):
     return base
 
 
-def normalize_event(event):
-    if not event:
-        return "unknown"
+def normalize_event(parsed):
+    print(f"parsed : {parsed}")
+    raw = (parsed or "").lower()
 
-    mapping = {
-        "login": "login",
-        "login_failed": "login_failed",
-        "file_access": "file_access",
-        "usb": "usb",
-        "usb_connected": "usb",
-    }
+    # ===== LOGIN =====
+    if "login_failed" in raw:
+        return "login_failed"
 
-    return mapping.get(event, event)
+    if "login" in raw:
+        return "login"
+
+    # ===== FILE =====
+    if "file" in raw or "accessed" in raw:
+        return "file_access"
+
+    # ===== USB =====
+    if "usb" in raw:
+        return "usb"
+
+    return raw or "unknown"
 
 
 def normalize_status(status):

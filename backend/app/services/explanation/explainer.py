@@ -1,4 +1,5 @@
 def generate_reasoning(features, logs):
+    features = features or {}
     reasons = []
 
     events = [l.get("event_type") for l in logs]

@@ -2,6 +2,7 @@ from collections import defaultdict
 
 
 def build_user_baselines(logs):
+    print("logs received inside the build_user_baselines: ", logs)
     """
     Build baseline per user from historical logs
     """
@@ -30,7 +31,8 @@ def build_user_baselines(logs):
             ip = log.get("metadata", {}).get("src_ip")
             if ip:
                 b["ip_set"].add(ip)
-
+    
+    print("baselines: ", baselines)
     return baselines
 
 

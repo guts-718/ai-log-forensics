@@ -9,11 +9,14 @@ from .rules import (
 
 def run_detection(logs):
     """
-    Run detection rules per user.
-    Ensures every alert has a 'user' field.
+    Run rule-based detection PER USER.
+    Returns alerts with user context attached.
     """
 
     alerts = []
+
+    if not logs:
+        return alerts
 
     # =========================
     # Group logs by user
@@ -25,18 +28,21 @@ def run_detection(logs):
         user_groups[user].append(log)
 
     # =========================
-    # Run detection per user
+    # Run rules per user
     # =========================
     for user, user_logs in user_groups.items():
 
+        # sort logs by time for sequence rules
+        user_logs = sorted(user_logs, key=lambda x: x.get("timestamp", ""))
+
         user_alerts = []
 
-        # Apply rules
+        # ===== Rule executions =====
         user_alerts.extend(detect_burst_activity(user_logs))
         user_alerts.extend(detect_exfiltration_pattern(user_logs))
         user_alerts.extend(detect_multiple_ips(user_logs))
 
-        # Attach user to each alert
+        # ===== Attach user =====
         for alert in user_alerts:
             alert["user"] = user
 

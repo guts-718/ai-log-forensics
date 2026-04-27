@@ -18,7 +18,7 @@ def detect_burst_activity(logs):
             else:
                 break
 
-        if count >= 5:
+        if count >= 3:
             alerts.append({
                 "type": "burst_activity",
                 "details": f"{count} events in 2 minutes",
@@ -29,11 +29,12 @@ def detect_burst_activity(logs):
 
 def detect_exfiltration_pattern(logs):
     alerts = []
+    print(f"logs inside the detect_exfiltration_pattern: ", logs)
 
     state = {"login": False, "file": False}
 
     for log in logs:
-        et = log.get("event_type")
+        et = log.get("event")
 
         if et == "login":
             state["login"] = True

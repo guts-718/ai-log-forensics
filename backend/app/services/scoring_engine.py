@@ -92,3 +92,23 @@ def add_baseline_score(score, anomalies):
         reasons.append(a)
 
     return score, reasons
+
+
+def add_chain_score(score, chains):
+
+    reasons = []
+
+    for c in chains:
+        if c["type"] == "data_exfiltration_chain":
+            score += 4
+            reasons.append("Attack chain: data exfiltration sequence")
+
+        elif c["type"] == "brute_force_chain":
+            score += 3
+            reasons.append("Attack chain: brute force sequence")
+
+        elif c["type"] == "cross_source_chain":
+            score += 2
+            reasons.append("Cross-source attack chain detected")
+
+    return score, reasons
