@@ -19,11 +19,12 @@ from app.services.graph_engine import build_attack_graph, detect_attack_chains
 
 from app.services.scoring_engine import (
     add_chain_score,
+    add_lstm_score,
     compute_risk_score,
     normalize_score,
     get_risk_level
 )
-
+from app.services.lstm_inference import predict_sequence_anomaly
 router = APIRouter()
 
 
@@ -103,7 +104,7 @@ def detect():
     print(f"\n[STEP 4 RESULT] Total alerts generated: {len(alerts)}")
 
     # if not alerts:
-    #     print("❌ No alerts generated → ROOT ISSUE HERE")
+    #     print("No alerts generated → ROOT ISSUE HERE")
     #     return {"status": "no_alerts", "results": []}
 
     # ===== TIMELINES AGAIN =====
@@ -181,7 +182,13 @@ def detect():
         reasons = generate_reasoning(features, user_logs)
         print(f"Initial reasons: {reasons}")
 
+        lstm_score = predict_sequence_anomaly(user_logs)
+        score, lstm_reasons = add_lstm_score(score, lstm_score)
+        reasons = list(set(reasons + lstm_reasons))
+
+        print("LSTM SCORE:", lstm_score)
         # ===== TIMELINE =====
+
         timeline = build_timeline_summary(user_logs)
 
         # ===== GRAPH =====

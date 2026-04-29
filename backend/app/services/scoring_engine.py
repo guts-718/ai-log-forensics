@@ -112,3 +112,20 @@ def add_chain_score(score, chains):
             reasons.append("Cross-source attack chain detected")
 
     return score, reasons
+
+
+def add_lstm_score(score, lstm_score):
+    reasons = []
+
+    if lstm_score is None:
+        return score, reasons
+
+    if lstm_score > 0.7:
+        score += 3
+        reasons.append("LSTM detected anomalous sequence")
+
+    elif lstm_score > 0.5:
+        score += 1
+        reasons.append("Moderate sequence anomaly")
+
+    return score, reasons

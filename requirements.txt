@@ -1,4 +1,9 @@
 fastapi
 uvicorn
+python-dotenv
+numpy
+pandas
+tensorflow
 elasticsearch
 python-multipart
+elasticsearch==8.5.0
