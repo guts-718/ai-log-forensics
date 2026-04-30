@@ -4,9 +4,13 @@ import numpy as np
 def load_and_merge():
     files = [
         "./data/tuesday.csv",
+         "./data/tuesday_plus.csv",
         "./data/wednesday.csv",
+        "./data/wednesday_plus.csv",
         "./data/thursday.csv",
-        "./data/friday.csv"
+        "./data/thursday_plus.csv",
+        "./data/friday.csv",
+        "./data/friday_plus.csv"
     ]
 
     dfs = []
@@ -59,6 +63,12 @@ def select_features(df):
     # Activity
     "Active Mean",
     "Idle Mean",
+    "Src IP dec", 
+    "Dst IP dec",
+    "Src Port", 
+    "Dst Port", 
+    "Protocol",
+    "Timestamp"
 ]
 
     df = df[selected + ["Label"]]
